@@ -25,8 +25,10 @@ print(">>> 安装依赖...")
 deps = ['pyinstaller', 'Pillow', 'python-docx', 'PyPDF2', 'pytesseract']
 subprocess.run([sys.executable, '-m', 'pip', 'install'] + deps, check=False)
 
+VERSION = "1.0.0"
+
 # 打包参数
-APP_NAME = "DocumentCleaner"
+APP_NAME = f"DocumentCleaner-{VERSION}"
 MAIN_SCRIPT = "document_cleaner_gui.py"
 
 # 基础参数
