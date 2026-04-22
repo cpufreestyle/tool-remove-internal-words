@@ -1,0 +1,12 @@
+# 文档内部字样清除工具依赖
+
+# 核心依赖
+Pillow>=9.0.0
+python-docx>=0.8.11
+PyPDF2>=3.0.0
+
+# OCR 识别（可选，需要安装 Tesseract）
+pytesseract>=0.3.10
+
+# 打包工具
+pyinstaller>=5.0

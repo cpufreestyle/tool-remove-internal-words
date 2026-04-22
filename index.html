@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档内部字样清除工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            background: #eef1ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-area.dragover {
+            background: #e0e5ff;
+            border-color: #4ecdc4;
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 30px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a6f);
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #56ab2f, #a8e6cf);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(45deg, #f39c12, #e74c3c);
+        }
+        
+        .settings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .setting-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .setting-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .setting-item label {
+            cursor: pointer;
+            font-size: 1em;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            resize: vertical;
+            font-family: 'Microsoft YaHei', monospace;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .preview-area {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Microsoft YaHei', monospace;
+            line-height: 1.6;
+        }
+        
+        /* 批量文件列表样式 */
+        .file-list {
+            margin-top: 20px;
+        }
+        
+        .file-list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+        }
+        
+        .file-list-header .select-all {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .file-list-header input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .file-item {
+            display: grid;
+            grid-template-columns: 40px 1fr auto auto auto;
+            align-items: center;
+            gap: 15px;
+            background: #f8f9ff;
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            transition: all 0.2s ease;
+        }
+        
+        .file-item:hover {
+            background: #eef1ff;
+        }
+        
+        .file-item.selected {
+            background: #e0f7fa;
+            border-left: 4px solid #4ecdc4;
+        }
+        
+        .file-item.marked-delete {
+            background: #ffebee;
+            border-left: 4px solid #ff6b6b;
+        }
+        
+        .file-item.marked-keep {
+            background: #e8f5e9;
+            border-left: 4px solid #56ab2f;
+        }
+        
+        .file-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .file-icon {
+            font-size: 1.5em;
+        }
+        
+        .file-name {
+            font-weight: 500;
+        }
+        
+        .file-size {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .file-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .file-status.pending {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        
+        .file-status.to-delete {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .file-status.to-keep {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .file-status.processed {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .file-actions button {
+            padding: 6px 12px;
+            font-size: 0.85em;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .file-actions .btn-mark-delete {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .file-actions .btn-mark-delete:hover {
+            background: #ffcdd2;
+        }
+        
+        .file-actions .btn-mark-keep {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .file-actions .btn-mark-keep:hover {
+            background: #c8e6c9;
+        }
+        
+        .file-actions .btn-remove {
+            background: #f5f5f5;
+            color: #666;
+        }
+        
+        .file-actions .btn-remove:hover {
+            background: #e0e0e0;
+        }
+        
+        .batch-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .batch-actions button {
+            padding: 10px 20px;
+            font-size: 0.95em;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+            transition: width 0.3s ease;
+        }
+        
+        .image-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .image-item {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .image-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        
+        .image-item .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .log-area {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9em;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 3px 0;
+            border-bottom: 1px solid #333;
+        }
+        
+        .log-entry.success { color: #4ecdc4; }
+        .log-entry.error { color: #ff6b6b; }
+        .log-entry.info { color: #45b7d1; }
+        .log-entry.warning { color: #f39c12; }
+        
+        /* 文件预览模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: auto;
+            padding: 30px;
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8em; }
+            .card { padding: 20px; }
+            .settings { grid-template-columns: 1fr; }
+            .file-item {
+                grid-template-columns: 30px 1fr auto;
+            }
+            .file-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>文档内部字样清除工具</h1>
+        
+        <!-- 文件上传区域 -->
+        <div class="card">
+            <h2>📁 上传文件</h2>
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📄</div>
+                <p>拖拽文件到此处，或点击选择文件</p>
+                <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
+                    支持：Word (.docx)、PDF、图片 (.jpg, .png, .gif)、文本文件
+                </p>
+                <input type="file" id="fileInput" multiple accept=".docx,.pdf,.jpg,.jpeg,.png,.gif,.txt,.doc">
+            </div>
+            
+            <!-- 批量文件列表 -->
+            <div class="file-list" id="fileList">
+                <div class="file-list-header" id="fileListHeader" style="display: none;">
+                    <div class="select-all">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                        <span>全选</span>
+                    </div>
+                    <span id="fileCount">0 个文件</span>
+                </div>
+                <div id="fileItems"></div>
+                
+                <!-- 批量操作按钮 -->
+                <div class="batch-actions" id="batchActions" style="display: none;">
+                    <button class="btn btn-danger" onclick="markSelectedToDelete()">🗑️ 标记删除</button>
+                    <button class="btn btn-success" onclick="markSelectedToKeep()">✅ 标记保留</button>
+                    <button class="btn btn-warning" onclick="removeSelected()">❌ 移除选中</button>
+                    <button class="btn" onclick="processSelected()">🚀 处理选中文件</button>
+                </div>
+            </div>
+            
+            <div class="image-preview" id="imagePreview"></div>
+        </div>
+        
+        <!-- 处理设置 -->
+        <div class="card">
+            <h2>⚙️ 处理设置</h2>
+            <div class="settings">
+                <div class="setting-item">
+                    <input type="checkbox" id="removeInternal" checked>
+                    <label for="removeInternal">去除"内部"字样</label>
+                </div>
+                <div class="setting-item">
+                    <input type="checkbox" id="removeConfidential" checked>
+                    <label for="removeConfidential">去除"机密"字样</label>
+                </div>
+                <div class="setting-item">
+                    <input type="checkbox" id="removeSecret" checked>
+                    <label for="removeSecret">去除"秘密"字样</label>
+                </div>
+                <div class="setting-item">
+                    <input type="checkbox" id="removeTopSecret">
+                    <label for="removeTopSecret">去除"绝密"字样</label>
+                </div>
+                <div class="setting-item">
+                    <input type="checkbox" id="scanImages" checked>
+                    <label for="scanImages">扫描图片中的文字</label>
+                </div>
+                <div class="setting-item">
+                    <input type="checkbox" id="watermark" checked>
+                    <label for="watermark">添加处理水印</label>
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: bold;">自定义要去除的文字（每行一个）：</label>
+                <textarea id="customWords" rows="3" placeholder="输入自定义要去除的文字，每行一个"></textarea>
+            </div>
+        </div>
+        
+        <!-- 文本处理区域 -->
+        <div class="card">
+            <h2>📝 文本处理</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: bold;">原始文本：</label>
+                    <textarea id="inputText" placeholder="在此粘贴文本内容，或上传文件自动提取..."></textarea>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: bold;">处理后文本：</label>
+                    <div class="preview-area" id="outputText">处理后的文本将显示在这里...</div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn" onclick="processText()">🚀 开始处理</button>
+                <button class="btn btn-success" onclick="copyResult()">📋 复制结果</button>
+                <button class="btn btn-danger" onclick="clearAll()">🗑️ 清空</button>
+            </div>
+        </div>
+        
+        <!-- 统计信息 -->
+        <div class="card">
+            <h2>📊 处理统计</h2>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="statFiles">0</div>
+                    <div class="stat-label">总文件</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statToDelete">0</div>
+                    <div class="stat-label">待删除</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statToKeep">0</div>
+                    <div class="stat-label">待保留</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statProcessed">0</div>
+                    <div class="stat-label">已处理</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statImages">0</div>
+                    <div class="stat-label">扫描图片</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statReplaced">0</div>
+                    <div class="stat-label">替换次数</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 日志区域 -->
+        <div class="card">
+            <h2>📋 处理日志</h2>
+            <div class="log-area" id="logArea">
+                <div class="log-entry info">系统就绪，等待文件上传...</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 文件预览模态框 -->
+    <div class="modal" id="previewModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <h2 id="modalTitle">文件预览</h2>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+    
+    <!-- Tesseract.js OCR 库 -->
+    <script src='https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js'></script>
+    
+    <script>
+        // 全局变量
+        let uploadedFiles = [];  // { file, status: 'pending'|'to-delete'|'to-keep'|'processed', selected: boolean, content: string }
+        let processedCount = 0;
+        let imageCount = 0;
+        let replaceCount = 0;
+        let charCount = 0;
+        
+        // DOM 元素
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const fileItems = document.getElementById('fileItems');
+        const imagePreview = document.getElementById('imagePreview');
+        const logArea = document.getElementById('logArea');
+        
+        // 点击上传区域触发文件选择
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        // 文件选择处理
+        fileInput.addEventListener('change', handleFiles);
+        
+        // 拖拽上传
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles({ target: { files: e.dataTransfer.files } });
+        });
+        
+        // 处理文件
+        async function handleFiles(e) {
+            const files = Array.from(e.target.files);
+            
+            for (const file of files) {
+                const fileObj = {
+                    file: file,
+                    status: 'pending',
+                    selected: false,
+                    content: '',
+                    id: Date.now() + Math.random()
+                };
+                
+                uploadedFiles.push(fileObj);
+                
+                // 如果是图片且启用了扫描
+                if (file.type.startsWith('image/') && document.getElementById('scanImages').checked) {
+                    displayImage(file, fileObj.id);
+                    await scanImage(file, fileObj.id);
+                } else if (file.type.startsWith('image/')) {
+                    displayImage(file, fileObj.id);
+                }
+                
+                // 如果是文本文件，读取内容
+                if (file.type === 'text/plain') {
+                    await readTextFile(file, fileObj.id);
+                }
+            }
+            
+            renderFileList();
+            updateStats();
+            log(`已添加 ${files.length} 个文件`, 'info');
+        }
+        
+        // 渲染文件列表
+        function renderFileList() {
+            const header = document.getElementById('fileListHeader');
+            const batchActions = document.getElementById('batchActions');
+            
+            if (uploadedFiles.length === 0) {
+                header.style.display = 'none';
+                batchActions.style.display = 'none';
+                fileItems.innerHTML = '';
+                return;
+            }
+            
+            header.style.display = 'flex';
+            batchActions.style.display = 'flex';
+            document.getElementById('fileCount').textContent = `${uploadedFiles.length} 个文件`;
+            
+            fileItems.innerHTML = uploadedFiles.map(f => `
+                <div class="file-item ${f.selected ? 'selected' : ''} ${f.status === 'to-delete' ? 'marked-delete' : ''} ${f.status === 'to-keep' ? 'marked-keep' : ''}" id="file-${f.id}">
+                    <input type="checkbox" class="file-checkbox" ${f.selected ? 'checked' : ''} onchange="toggleFileSelect('${f.id}')">
+                    <div class="file-info">
+                        <span class="file-icon">${getFileIcon(f.file.type)}</span>
+                        <div>
+                            <div class="file-name">${f.file.name}</div>
+                            <div class="file-size">${formatSize(f.file.size)}</div>
+                        </div>
+                    </div>
+                    <span class="file-status ${f.status}">${getStatusText(f.status)}</span>
+                    <div class="file-actions">
+                        <button class="btn-mark-delete" onclick="markFile('${f.id}', 'to-delete')" title="标记删除">🗑️</button>
+                        <button class="btn-mark-keep" onclick="markFile('${f.id}', 'to-keep')" title="标记保留">✅</button>
+                        <button class="btn-remove" onclick="removeFile('${f.id}')" title="移除">❌</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // 更新全选框状态
+            const allSelected = uploadedFiles.every(f => f.selected);
+            document.getElementById('selectAll').checked = allSelected;
+        }
+        
+        // 获取状态文本
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': '待处理',
+                'to-delete': '待删除',
+                'to-keep': '待保留',
+                'processed': '已处理'
+            };
+            return statusMap[status] || status;
+        }
+        
+        // 切换文件选择
+        function toggleFileSelect(id) {
+            const file = uploadedFiles.find(f => f.id == id);
+            if (file) {
+                file.selected = !file.selected;
+                renderFileList();
+            }
+        }
+        
+        // 全选/取消全选
+        function toggleSelectAll() {
+            const checked = document.getElementById('selectAll').checked;
+            uploadedFiles.forEach(f => f.selected = checked);
+            renderFileList();
+        }
+        
+        // 标记单个文件
+        function markFile(id, status) {
+            const file = uploadedFiles.find(f => f.id == id);
+            if (file) {
+                file.status = status;
+                renderFileList();
+                updateStats();
+                log(`文件 "${file.file.name}" 已标记为: ${getStatusText(status)}`, 'info');
+            }
+        }
+        
+        // 标记选中文件为删除
+        function markSelectedToDelete() {
+            const selected = uploadedFiles.filter(f => f.selected);
+            if (selected.length === 0) {
+                alert('请先选择文件！');
+                return;
+            }
+            selected.forEach(f => f.status = 'to-delete');
+            renderFileList();
+            updateStats();
+            log(`已标记 ${selected.length} 个文件为删除`, 'warning');
+        }
+        
+        // 标记选中文件为保留
+        function markSelectedToKeep() {
+            const selected = uploadedFiles.filter(f => f.selected);
+            if (selected.length === 0) {
+                alert('请先选择文件！');
+                return;
+            }
+            selected.forEach(f => f.status = 'to-keep');
+            renderFileList();
+            updateStats();
+            log(`已标记 ${selected.length} 个文件为保留`, 'success');
+        }
+        
+        // 移除选中文件
+        function removeSelected() {
+            const selected = uploadedFiles.filter(f => f.selected);
+            if (selected.length === 0) {
+                alert('请先选择文件！');
+                return;
+            }
+            if (!confirm(`确定要移除 ${selected.length} 个文件吗？`)) return;
+            
+            uploadedFiles = uploadedFiles.filter(f => !f.selected);
+            renderFileList();
+            updateStats();
+            log(`已移除 ${selected.length} 个文件`, 'info');
+        }
+        
+        // 处理选中文件
+        async function processSelected() {
+            const selected = uploadedFiles.filter(f => f.selected);
+            if (selected.length === 0) {
+                alert('请先选择文件！');
+                return;
+            }
+            
+            log(`开始处理 ${selected.length} 个文件...`, 'info');
+            
+            for (const fileObj of selected) {
+                if (fileObj.status === 'to-delete') {
+                    // 跳过标记为删除的文件
+                    log(`跳过标记删除的文件: ${fileObj.file.name}`, 'warning');
+                    continue;
+                }
+                
+                if (fileObj.content) {
+                    // 处理文本内容
+                    const processed = processTextContent(fileObj.content);
+                    fileObj.processedContent = processed;
+                }
+                
+                fileObj.status = 'processed';
+            }
+            
+            renderFileList();
+            updateStats();
+            log(`处理完成！`, 'success');
+        }
+        
+        // 显示图片预览
+        function displayImage(file, id) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imgItem = document.createElement('div');
+                imgItem.className = 'image-item';
+                imgItem.id = `img-${id}`;
+                imgItem.innerHTML = `
+                    <img src="${e.target.result}" alt="${file.name}">
+                    <button class="remove-btn" onclick="removeImage('${id}')">×</button>
+                `;
+                imagePreview.appendChild(imgItem);
+                imageCount++;
+                updateStats();
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // OCR 扫描图片
+        async function scanImage(file, id) {
+            log(`正在扫描图片: ${file.name}...`, 'info');
+            
+            try {
+                const result = await Tesseract.recognize(
+                    file,
+                    'chi_sim+eng',
+                    { logger: m => console.log(m) }
+                );
+                
+                const text = result.data.text;
+                if (text.trim()) {
+                    const fileObj = uploadedFiles.find(f => f.id == id);
+                    if (fileObj) {
+                        fileObj.content = text;
+                    }
+                    const currentText = document.getElementById('inputText').value;
+                    document.getElementById('inputText').value = currentText + '\n' + text;
+                    log(`图片 ${file.name} 识别完成，提取 ${text.length} 字符`, 'success');
+                    charCount += text.length;
+                    updateStats();
+                }
+            } catch (error) {
+                log(`图片 ${file.name} 识别失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 读取文本文件
+        async function readTextFile(file, id) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const text = e.target.result;
+                    const fileObj = uploadedFiles.find(f => f.id == id);
+                    if (fileObj) {
+                        fileObj.content = text;
+                    }
+                    const currentText = document.getElementById('inputText').value;
+                    document.getElementById('inputText').value = currentText + '\n' + text;
+                    charCount += text.length;
+                    updateStats();
+                    log(`已读取文本文件: ${file.name}`, 'success');
+                    resolve();
+                };
+                reader.readAsText(file);
+            });
+        }
+        
+        // 处理文本内容
+        function processTextContent(text) {
+            const originalLength = text.length;
+            let replacements = 0;
+            
+            // 获取设置
+            const settings = {
+                internal: document.getElementById('removeInternal').checked,
+                confidential: document.getElementById('removeConfidential').checked,
+                secret: document.getElementById('removeSecret').checked,
+                topSecret: document.getElementById('removeTopSecret').checked
+            };
+            
+            // 定义替换规则
+            const rules = [];
+            if (settings.internal) {
+                rules.push({ pattern: /内部/g, replacement: '' });
+                rules.push({ pattern: /\[内部\]/g, replacement: '' });
+                rules.push({ pattern: /（内部）/g, replacement: '' });
+            }
+            if (settings.confidential) {
+                rules.push({ pattern: /机密/g, replacement: '' });
+                rules.push({ pattern: /\[机密\]/g, replacement: '' });
+                rules.push({ pattern: /（机密）/g, replacement: '' });
+            }
+            if (settings.secret) {
+                rules.push({ pattern: /秘密/g, replacement: '' });
+                rules.push({ pattern: /\[秘密\]/g, replacement: '' });
+                rules.push({ pattern: /（秘密）/g, replacement: '' });
+            }
+            if (settings.topSecret) {
+                rules.push({ pattern: /绝密/g, replacement: '' });
+                rules.push({ pattern: /\[绝密\]/g, replacement: '' });
+                rules.push({ pattern: /（绝密）/g, replacement: '' });
+            }
+            
+            // 自定义替换规则
+            const customWords = document.getElementById('customWords').value
+                .split('\n')
+                .map(w => w.trim())
+                .filter(w => w);
+            
+            customWords.forEach(word => {
+                const regex = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                rules.push({ pattern: regex, replacement: '' });
+            });
+            
+            // 执行替换
+            rules.forEach(rule => {
+                const matches = text.match(rule.pattern);
+                if (matches) {
+                    replacements += matches.length;
+                    text = text.replace(rule.pattern, rule.replacement);
+                }
+            });
+            
+            // 清理多余空行
+            text = text.replace(/\n{3,}/g, '\n\n');
+            
+            replaceCount += replacements;
+            return text;
+        }
+        
+        // 处理文本
+        function processText() {
+            let text = document.getElementById('inputText').value;
+            if (!text.trim()) {
+                alert('请输入或上传要处理的文本！');
+                return;
+            }
+            
+            text = processTextContent(text);
+            
+            // 添加水印
+            if (document.getElementById('watermark').checked) {
+                const timestamp = new Date().toLocaleString('zh-CN');
+                text = `【本文档已脱敏处理】\n处理时间：${timestamp}\n\n${text}`;
+            }
+            
+            // 显示结果
+            document.getElementById('outputText').textContent = text;
+            
+            processedCount++;
+            updateStats();
+            
+            log(`处理完成！`, 'success');
+        }
+        
+        // 复制结果
+        function copyResult() {
+            const text = document.getElementById('outputText').textContent;
+            if (text === '处理后的文本将显示在这里...') {
+                alert('没有可复制的内容！');
+                return;
+            }
+            
+            navigator.clipboard.writeText(text).then(() => {
+                log('结果已复制到剪贴板', 'success');
+                alert('已复制到剪贴板！');
+            }).catch(err => {
+                log('复制失败: ' + err, 'error');
+            });
+        }
+        
+        // 清空
+        function clearAll() {
+            if (confirm('确定要清空所有内容吗？')) {
+                uploadedFiles = [];
+                processedCount = 0;
+                imageCount = 0;
+                replaceCount = 0;
+                charCount = 0;
+                
+                document.getElementById('inputText').value = '';
+                document.getElementById('outputText').textContent = '处理后的文本将显示在这里...';
+                document.getElementById('customWords').value = '';
+                imagePreview.innerHTML = '';
+                
+                renderFileList();
+                updateStats();
+                log('已清空所有内容', 'info');
+            }
+        }
+        
+        // 删除文件
+        function removeFile(id) {
+            uploadedFiles = uploadedFiles.filter(f => f.id != id);
+            renderFileList();
+            updateStats();
+            log(`已删除文件`, 'info');
+        }
+        
+        // 删除图片
+        function removeImage(id) {
+            const imgItem = document.getElementById(`img-${id}`);
+            if (imgItem) {
+                imgItem.remove();
+                imageCount--;
+                updateStats();
+            }
+            removeFile(id);
+        }
+        
+        // 更新统计
+        function updateStats() {
+            const toDelete = uploadedFiles.filter(f => f.status === 'to-delete').length;
+            const toKeep = uploadedFiles.filter(f => f.status === 'to-keep').length;
+            const processed = uploadedFiles.filter(f => f.status === 'processed').length;
+            
+            document.getElementById('statFiles').textContent = uploadedFiles.length;
+            document.getElementById('statToDelete').textContent = toDelete;
+            document.getElementById('statToKeep').textContent = toKeep;
+            document.getElementById('statProcessed').textContent = processed;
+            document.getElementById('statImages').textContent = imageCount;
+            document.getElementById('statReplaced').textContent = replaceCount;
+        }
+        
+        // 添加日志
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString('zh-CN');
+            entry.textContent = `[${time}] ${message}`;
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        // 获取文件图标
+        function getFileIcon(type) {
+            if (type.startsWith('image/')) return '🖼️';
+            if (type === 'application/pdf') return '📕';
+            if (type.includes('word') || type.includes('document')) return '📘';
+            if (type === 'text/plain') return '📄';
+            return '📎';
+        }
+        
+        // 格式化文件大小
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('previewModal').classList.remove('show');
+        }
+        
+        // 初始化
+        log('系统初始化完成', 'success');
+    </script>
+</body>
+</html>
