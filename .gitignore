@@ -1,20 +1,46 @@
-# 忽略IDE相关文件
+# 蹇界暐IDE鐩稿叧鏂囦欢
 .trae/
 .vscode/
 
-# 忽略系统文件
+# 蹇界暐绯荤粺鏂囦欢
 Thumbs.db
 .DS_Store
 
-# 忽略日志文件
+# 蹇界暐鏃ュ織鏂囦欢
 *.log
 
-# 忽略依赖文件
+# 蹇界暐渚濊禆鏂囦欢
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# 忽略构建文件
+# 蹇界暐鏋勫缓鏂囦欢
 build/
 dist/
+# Binary files - use GitHub Releases instead
+*.exe
+*.dll
+*.so
+*.dylib
+*.jar
+*.war
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
+*.msi
+*.apk
+*.ipa
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
